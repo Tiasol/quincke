@@ -213,6 +213,54 @@ void QuinckeForceCompute::setForces(unsigned int timestep)
                 }
             }
         
+        //add images for i (i_iimage)
+        Scalar3 rii_img;
+        Scalar rii_mag_img;
+
+        Scalar rii_img_zplus = Scalar(0.0);
+        Scalar rii_img_zminus = Scalar(0.0);
+        Scalar xii = m_H / Scalar(2.0) - pi.z ;
+        Scalar sign = Scalar(1.0); // takes care of the inversion of reflected dipoles
+        for (unsigned int zimage = 1; zimage < 1+m_rcut/m_H; zimage++)
+            {   
+                // add images along +z axis
+                sign *= -1;
+                rii_img_zplus += -sign * Scalar(2.0)*xii + m_H + sign * m_H;
+                rii_img = make_scalar3(0, 0, -rii_img_zplus);
+                rii_mag_img = slow::sqrt(dot(rii_img,rii_img));
+                if (rii_mag_img < m_rcut)
+                    {
+                    Scalar rii_inv5 = Scalar(1.0) / (rii_mag_img * rii_mag_img * rii_mag_img * rii_mag_img * rii_mag_img);
+                    Scalar rii_inv2 = Scalar(1.0) / (rii_mag_img * rii_mag_img);
+
+                    Fi_x += sign* rii_inv5 * rii_img.x * (3 - 15 * rii_img.z * rii_img.z * rii_inv2);
+                    Fi_y += sign* rii_inv5 * rii_img.y * (3 - 15 * rii_img.z * rii_img.z * rii_inv2);
+                    Fi_z += sign* rii_inv5 * rii_img.z * (6 + 3 - 15 * rii.z * rii_img.z * rii_inv2);
+                            
+                    Ei_x += sign* 3 * rii_inv5 * rii_img.x * rii_img.z;
+                    Ei_y += sign* 3 * rii_inv5 * rii_img.y * rii_img.z;
+                    Ei_z += sign* 3 * rii_inv5 * rii_img.z * rii_img.z - rii_inv2/rii_mag_img;
+                    }
+                // add images along -z axis
+                rii_img_zminus += sign * Scalar(2.0)*xii + m_H - sign * m_H;
+                rii_img = make_scalar3(0, 0,  rii_img_zminus);
+                rii_mag_img = slow::sqrt(dot(rii_img,rii_img));
+                if (rii_mag_img < m_rcut)
+                    {
+                    Scalar rii_inv5 = Scalar(1.0) / (rii_mag_img * rii_mag_img * rii_mag_img * rii_mag_img * rii_mag_img);
+                    Scalar rii_inv2 = Scalar(1.0) / (rii_mag_img * rii_mag_img);
+
+                    Fi_x += sign* rii_inv5 * rii_img.x * (3 - 15 * rii_img.z * rii_img.z * rii_inv2);
+                    Fi_y += sign* rii_inv5 * rii_img.y * (3 - 15 * rii_img.z * rii_img.z * rii_inv2);
+                    Fi_z += sign* rii_inv5 * rii_img.z * (6 + 3 - 15 * rii.z * rii_img.z * rii_inv2);
+                    
+                    Ei_x += sign* 3 * rii_inv5 * rii_img.x * rii_img.z;
+                    Ei_y += sign* 3 * rii_inv5 * rii_img.y * rii_img.z;
+                    Ei_z += sign* 3 * rii_inv5 * rii_img.z * rii_img.z - rii_inv2/rii_mag_img;
+                    }
+            }
+
+
         // std::cout<< Fi_x << "**" << Fi_y << "**" << Fi_z << "**";
 
         Scalar Ei_mag = m_Ee * sqrt( (ai_cube * m_sigma21*Ei_x) * (ai_cube * m_sigma21*Ei_x) + 
